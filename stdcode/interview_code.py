@@ -13,9 +13,6 @@ import scipy.sparse as sparse
 import pandas as pd
 import numpy as np
 import requests
-import sys
-import subprocess
-import pkg_resources
 from datetime import datetime as DT
 
 
@@ -31,7 +28,7 @@ def project_init():
     ''
     Returns
     -------
-    DOWNLOADS_DIR: Folder where the CHIRPS files are downloaded in 
+    DOWNLOADS_DIR: Folder where the CHIRPS files are downloaded in
     MASKED_FILES_DIR: Folder where the masked files are saved in
     SATCKED_FILES_DIR: Folder where the stacked files are saved in
     THREADS: Number of thread that the multithreading functions will use
@@ -74,12 +71,10 @@ SATCKED_FILES_DIR = myenv['SATCKED_FILES_DIR']
 SATCKED_FILES_CURRENT_DIR = myenv['SATCKED_FILES_CURRENT_DIR']
 THREADS = myenv['THREADS']
 
-# For the current files
-
 
 def files_url_list(url, files, year):
     '''
-    Build the files url list from the CHIRPS website. Use beautiful soup to extract urls from thewebsite html. 
+    Build the files url list from the CHIRPS website. Use beautiful soup to extract urls from thewebsite html.
     Parameters
     ----------
     url: url of the .tiff to download
@@ -87,7 +82,7 @@ def files_url_list(url, files, year):
     year: year of selection
     Returns
     -------
-    no return 
+    no return
     '''
     page = requests.get(url).text
     soup = BeautifulSoup(page, 'html.parser')
@@ -181,6 +176,7 @@ def concurrent_file_downloader(files):
     result = []
     # Concurences
     with ThreadPoolExecutor(max_workers=THREADS) as executor:
+        i = 0
         for year in files:
             for url in files[year]:
                 try:
@@ -272,18 +268,16 @@ def calculate_rainy_days(baseUrl, years):
     for file in os.listdir(MASKED_FILES_DIR):
         if file[-4:] == '.tif':
             if (int(file[12:16]) in years):  # file of selected years only
+                # read the masked/clipped .tiff
                 dataset = rasterio.open(MASKED_FILES_DIR+file)
-                widht = dataset.profile.get('width')
+                widht = dataset.profile.get('width')  # get imgage dimensions
                 height = dataset.profile.get('height')
                 data_array = dataset.read(1)  # read one band
-                data_array_sparse = sparse.coo_matrix(
+                data_array_sparse = sparse.coo_matrix(  # use sparse matrix for better performance
                     data_array, shape=(height, widht))
-                if(baseUrl.split('_')[-1].split('/')[0] == 'daily'):
-                    data = file[12:-11]
-                elif(baseUrl.split('_')[-1].split('/')[0] == 'monthly'):
-                    data = file[12:-14]
-                Mat[data] = data_array_sparse.toarray().tolist()
-
+                dates = file[12:-11]  # get dates
+                # build Dataframe with date as colname and rain values
+                Mat[dates] = data_array_sparse.toarray().tolist()
     # Calculate the precipitaion per day dataframe
     # sum the array in each dataframe cells
     raindatadf = pd.DataFrame(Mat.applymap(
@@ -292,7 +286,7 @@ def calculate_rainy_days(baseUrl, years):
         number_of_days = {}
         for i in range(1, 13):  # for 12 months
             number_of_days[MONTHS_DICT[i]] = raindatadf[raindatadf.columns[raindatadf.columns.str.slice(
-                0, 7).str.endswith(f'{year}.{i:02}')]].gt(0.0).sum(axis=1)[0]
+                0, 7).str.endswith(f'{year}.{i:02}')]].gt(0.0).sum(axis=1)[0]  # count date where precipitation  is more than 0.0
         rainy_days[year] = number_of_days
     return rainy_days
 
@@ -407,7 +401,7 @@ def main(aoifilepath, years):
         files = {}
         # get all files ulrs from the CHIRPS dataset base_url
         files = concurrent_files_url_list(BASE_URL, years)
-        print('1/6- Collecting .tif images links from CHIRPS webpage')
+        print('1/6- Collecting .tif images links from https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/')
         # # launch concurent dowload of all the .tif files selected
         print('2/6- Dowloading the .tif files')
         concurrent_file_downloader(files)
@@ -420,7 +414,7 @@ def main(aoifilepath, years):
         concurrent_masking(aoishapes, years)
 
         # Calculate number of raining days
-        print('5/6- Calculate the rain days averages')
+        print('5/6- Calculating the rainy days monthly averages')
         raindata = calculate_rainy_days(BASE_URL, years)
 
         # order the masked files by year and month
@@ -433,11 +427,11 @@ def main(aoifilepath, years):
         print(
             f'Your stacked files are available here {SATCKED_FILES_CURRENT_DIR} ')
         print('Monthly rainy days average:')
-        print(pd.DataFrame(raindata).mean(axis=1).round(decimals=0).astype(int))
+        averageraindata = pd.DataFrame(raindata).mean(
+            axis=1).round(decimals=0).astype(int)
+        print(averageraindata)
         delete_all_downloaded_files(DOWNLOADS_DIR_TIF)
     else:
         print('The year(s) you have chosen are not part of the available data')
-
     print('... deleting the downloaded .tif files')
-
-    return pd.DataFrame(raindata).mean(axis=1).round(decimals=0).astype(int).to_dict()
+    return averageraindata.to_dict()
