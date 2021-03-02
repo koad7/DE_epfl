@@ -410,7 +410,7 @@ def main(aoifilepath, years):
         print('1/6- Collecting .tif images links from CHIRPS webpage')
         # # launch concurent dowload of all the .tif files selected
         print('2/6- Dowloading the .tif files')
-        # concurrent_file_downloader(files)
+        concurrent_file_downloader(files)
         # dowload aoi file
         print('3/6- Loading aoi shape file')
         aoishapes = aoi_shapefile_reader(aoifilepath)
