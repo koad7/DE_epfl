@@ -37,17 +37,17 @@ def project_init():
     THREADS: Number of thread that the multithreading functions will use
     '''
     # CREATE WORK DIRS
-    DOWNLOADS_DIR_TIF = './.tmp/downloads/tif/'  # downloaded files
+    DOWNLOADS_DIR_TIF = './.tmp/downloads/tif/'  # create download files folder
     if not os.path.exists(DOWNLOADS_DIR_TIF):
         os.makedirs(DOWNLOADS_DIR_TIF)
-    DOWNLOADS_DIR_AOI = './data/'  # given/downloaded  aoi files
+    DOWNLOADS_DIR_AOI = './data/'  # given/downloaded  aoi files folder
     if not os.path.exists(DOWNLOADS_DIR_AOI):
         os.makedirs(DOWNLOADS_DIR_AOI)
-    MASKED_FILES_DIR = './.tmp/masked/'  # masked files
+    MASKED_FILES_DIR = './.tmp/masked/'  # create masked files folder
     if not os.path.exists(MASKED_FILES_DIR):
         os.makedirs(MASKED_FILES_DIR)
     SATCKED_FILES_DIR = './stacked/'
-    if not os.path.exists(SATCKED_FILES_DIR):  # created stacked files
+    if not os.path.exists(SATCKED_FILES_DIR):  # created stacked files folder
         os.makedirs(SATCKED_FILES_DIR)
     # Current stacked files
     SATCKED_FILES_CURRENT_DIR = SATCKED_FILES_DIR +  \
