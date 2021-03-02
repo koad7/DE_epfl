@@ -398,12 +398,12 @@ def main(aoifilepath, years):
     a dict of rainy days monthly means over the years period given.
     '''
     # Selection of year(s) of interest
-    yeasavailablers = [2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002,
-                       2001, 2000, 1999, 1998, 1997, 1996, 1995, 1994, 1993, 1992, 1991, 1990, 1989, 1988, 1987, 1986, 1985, 1984, 1983, 1982, 1981]
+    availableyears = [2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002,
+                      2001, 2000, 1999, 1998, 1997, 1996, 1995, 1994, 1993, 1992, 1991, 1990, 1989, 1988, 1987, 1986, 1985, 1984, 1983, 1982, 1981]
 
     BASE_URL = 'https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/'
     # check if selected years is in the available years
-    if (all(item in yeasavailablers for item in years)):
+    if (all(item in availableyears for item in years)):
         files = {}
         # get all files ulrs from the CHIRPS dataset base_url
         files = concurrent_files_url_list(BASE_URL, years)
