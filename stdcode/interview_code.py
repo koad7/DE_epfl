@@ -391,8 +391,8 @@ def main(aoifilepath, years):
     Generate the average rain days per selected years and the stacked files in the './stacked' folder.
     Parameters
     ----------
-    aoifilepath : Path to the aoi file.
-    years: list of years 
+    aoifilepath : Path to the aoi file. e.g. 'data/aoi.shp',
+    years: list of years e.g [2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010]
     Returns
     -------
     a dict of rainy days monthly means over the years period given.
