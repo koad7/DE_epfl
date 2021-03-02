@@ -2,7 +2,7 @@
 
 #### Installation:
 
-From the root of the django app directory `./web2/ratsterizer/`:
+From the root of the stdcode folder `./stdcode/`:
 
 1. Create a virtualenv `virtualenv venv`
 2. Install the dependencies `pip install -r requirements.txt`
