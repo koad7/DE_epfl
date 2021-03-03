@@ -1,7 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import glob
-import itertools
 import logging
 import gzip
 import rasterio
@@ -248,7 +247,7 @@ def concurrent_masking(shapes, years):
                     "concurrent_file_downloader: Exception caught during processing")
 
 
-def calculate_rainy_days(baseUrl, years):
+def stack_rasters(years):
     '''
     Calculate the number of rainy dates in month over a year
     Parameters
@@ -258,111 +257,40 @@ def calculate_rainy_days(baseUrl, years):
     -------
     OrderedDict of month - rainy days
     '''
+
     MONTHS_DICT = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
                    6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
     data_array = []
-    rainy_days = {}
     Mat = pd.DataFrame()
-    table = pd.DataFrame(index=np.arange(0, 1))
+    ras_meta = {}  # Profile
+    # Read rain data into dataframe
     # Read rain data into dataframe
     for file in os.listdir(MASKED_FILES_DIR):
         if file[-4:] == '.tif':
             if (int(file[12:16]) in years):  # file of selected years only
                 # read the masked/clipped .tiff
                 dataset = rasterio.open(MASKED_FILES_DIR+file)
-                widht = dataset.profile.get('width')  # get imgage dimensions
+                ras_meta = dataset.profile
+                widht = dataset.profile.get('width')  # get raster dimensions
                 height = dataset.profile.get('height')
                 data_array = dataset.read(1)  # read one band
-                data_array_sparse = sparse.coo_matrix(  # use sparse matrix for better performance
+                data_array_sparse = sparse.coo_matrix(  # use scipy cordinate matrix/sparse matrix for better performance
                     data_array, shape=(height, widht))
                 dates = file[12:-11]  # get dates
                 # build Dataframe with date as colname and rain values
                 Mat[dates] = data_array_sparse.toarray().tolist()
-    # Calculate the precipitaion per day dataframe
-    # sum the array in each dataframe cells
-    raindatadf = pd.DataFrame(Mat.applymap(
-        lambda x: sum([t for t in x])).sum()).T
-    for year in years:
-        number_of_days = {}
-        for i in range(1, 13):  # for 12 months
-            number_of_days[MONTHS_DICT[i]] = raindatadf[raindatadf.columns[raindatadf.columns.str.slice(
-                0, 7).str.endswith(f'{year}.{i:02}')]].gt(0.0).sum(axis=1)[0]  # count date where precipitation  is more than 0.0
-        rainy_days[year] = number_of_days
-    return rainy_days
 
+    Mat2 = pd.DataFrame(Mat.applymap(lambda x: [1 if l > 0 else 0 for l in x]))
 
-def order_masked_files_per_month():
-    '''
-    Order masked .tiff files from MASKED_FILES_DIR  per month.
-    Parameters
-    ----------
-    years: List of years selected
-    Returns
-    -------
-    rasterfiles: dictionnary of list of masked .tiff files ordered by month
-    '''
-    rasterfiles = {}
-    def key(x): return x[17:19]  # Month
-    masked_raster = os.listdir(MASKED_FILES_DIR)
-    masked_raster = sorted(masked_raster, key=key)
-    myfileslist = []
+    number_of_days = {}
+    for i in range(1, len(MONTHS_DICT)+1):  # for 12 months
+        number_of_days[MONTHS_DICT[i]] = Mat2[Mat2.columns[Mat2.columns.str.slice(
+            0, 7).str.endswith(f'{i:02}')]].applymap(np.array).sum(axis=1)  # count date where precipitation  is more than 0.0
 
-    for key, group in itertools.groupby(masked_raster, key):
-        myfileslist.append(list(group))
-    # Month selection as key
-    for l in myfileslist:
-        rasterfiles[str(l[0][17:19])] = l
-    return rasterfiles
-
-
-def stack_rasters(filelist, month, years):
-    '''
-    Stack list of .tif files by month
-    Parameters
-    ----------
-    filelist: List of masked tiff images
-    month: month selected in number ('01', '02'...'12')
-    Returns
-    -------
-    no return. Copy the stacked .tiff images in SATCKED_FILES_DIR
-    '''
-    months_dict = {'01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr', '05': 'May', '06': 'Jun',
-                   '07': 'Jul', '08': 'Aug', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec'}
-    with rasterio.open(MASKED_FILES_DIR+filelist[0]) as src0:
-        meta = src0.meta
-
-    # Update meta to reflect the number of layers
-    meta.update(count=len(filelist))
-
-    # Read each layer and write it to stack
-    yearslist = '_'.join(map(str, [years[-1], years[0]]))
-    with rasterio.open(f'{SATCKED_FILES_CURRENT_DIR}stacked_{yearslist}.{months_dict[month]}.tif', 'w', **meta) as dst:
-        for id, layer in enumerate(filelist, start=1):
-            with rasterio.open(MASKED_FILES_DIR+layer) as src1:
-                dst.write_band(id, src1.read(1))
-
-
-def concurrent_stack_rasters(rasterfiles, years):
-    '''
-    Launch the concurent stacking of the tiff images
-    Parameters
-    ----------
-    No parameters
-    Returns
-    -------
-    No return. Copy the stacked .tiff images in SATCKED_FILES_DIR
-    '''
-    appenddata = []
-    result = []
-    # Concurent masking
-    with ThreadPoolExecutor(max_workers=THREADS) as executor:
-        for month in rasterfiles:
-            try:
-                # int(month[:3]) # trick to remove .DS_STORE file
-                filelist = rasterfiles[month]
-                executor.submit(stack_rasters, filelist, month, years)
-            except Exception as e:
-                pass
+    for m in number_of_days:
+        with rasterio.open(f'{SATCKED_FILES_CURRENT_DIR}{m}.tif', 'w', **ras_meta) as dst:
+            dst.write(np.rint(pd.DataFrame(number_of_days[m].tolist()).astype(
+                'float32').to_numpy()/len(years)), 1)
 
 
 def delete_all_downloaded_files(filedir):
@@ -408,30 +336,23 @@ def main(aoifilepath, years):
         # dowload aoi file
         print('3/6- Loading aoi shape file')
         aoishapes = aoi_shapefile_reader(aoifilepath)
-
         # clipping or maksing.  The files are stored in MASKED_FILES_DIR
         print('4/6- Masking the .tif files with the aoi polygon')
-        concurrent_masking(aoishapes, years)
+        #concurrent_masking(aoishapes, years)
 
         # Calculate number of raining days
         print('5/6- Calculating the rainy days monthly averages')
-        raindata = calculate_rainy_days(BASE_URL, years)
-
-        # order the masked files by year and month
-        rasterfiles = order_masked_files_per_month()
 
         # Generate the stacked files in SATCKED_FILES_DIR
+
         print(
             f'6/6- Generating the stacked files in {SATCKED_FILES_CURRENT_DIR}')
-        concurrent_stack_rasters(rasterfiles, years)
+        stack_rasters(years)
         print(
             f'Your stacked files are available here {SATCKED_FILES_CURRENT_DIR} ')
         print('Monthly rainy days average:')
-        averageraindata = pd.DataFrame(raindata).mean(
-            axis=1).round(decimals=0).astype(int)
-        print(averageraindata)
-        delete_all_downloaded_files(DOWNLOADS_DIR_TIF)
+
+        # delete_all_downloaded_files(DOWNLOADS_DIR_TIF)
     else:
         print('The year(s) you have chosen are not part of the available data')
     print('... deleting the downloaded .tif files')
-    return averageraindata.to_dict()
