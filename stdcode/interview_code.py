@@ -330,26 +330,23 @@ def main(aoifilepath, years):
         # get all files ulrs from the CHIRPS dataset base_url
         files = concurrent_files_url_list(BASE_URL, years)
         print('1/5- Collecting .tif images links from https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/')
-        # # launch concurent dowload of all the .tif files selected
+        # launch concurent dowload of all the .tif files selected
         print('2/5- Dowloading the .tif files')
         concurrent_file_downloader(files)
         # dowload aoi file
         print('3/5- Loading aoi shape file')
         aoishapes = aoi_shapefile_reader(aoifilepath)
-        # clipping or maksing.  The files are stored in MASKED_FILES_DIR
+        # clipping/maksing.  The files are stored in MASKED_FILES_DIR
         print('4/5- Masking the .tif files with the aoi polygon')
-        #concurrent_masking(aoishapes, years)
+        concurrent_masking(aoishapes, years)
 
         # Generate the stacked files in SATCKED_FILES_DIR
-
-        print(
-            f'5/5- Generating the stacked files in {SATCKED_FILES_CURRENT_DIR}')
         stack_rasters(years)
         print(
             f'Your stacked files are available here {SATCKED_FILES_CURRENT_DIR} ')
         print('Monthly rainy days average:')
 
-        # delete_all_downloaded_files(DOWNLOADS_DIR_TIF)
+        delete_all_downloaded_files(DOWNLOADS_DIR_TIF)
     else:
         print('The year(s) you have chosen are not part of the available data')
     print('... deleting the downloaded .tif files')
