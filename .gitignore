@@ -141,6 +141,10 @@ dmypy.json
 
 # profiling data
 .prof
+<<<<<<< HEAD
 *.zip
 2021-*
+=======
+
+>>>>>>> 2f99516a2e9b07dde10960523d9974b1538e8451
 # End of https://www.toptal.com/developers/gitignore/api/python
