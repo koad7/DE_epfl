@@ -100,14 +100,14 @@ def files_url_list(url, files, year):
 
 def concurrent_files_url_list(baseUrl, years):
     '''
-    Concurrent Donwload of .tiff file urls in a list
+    Concurrent Donwload of the rasters from urls list.
     Parameters
     ----------
     baseUrl: url of the page to download the files from
     years: list of year(s) of selection
     Returns
     -------
-    files: list or urls to download
+    files: list of file urls to download
     '''
     files = {}
     # Concurences
@@ -252,7 +252,6 @@ def export_rasters(years):
     -------
     no return
     '''
-
     MONTHS_DICT = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
                    6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
     data_array = []
@@ -273,7 +272,6 @@ def export_rasters(years):
                 dates = file[12:-11]  # get dates
                 # build Dataframe with date as colname and rain values
                 Mat[dates] = data_array_sparse.toarray().tolist()
-
     # change value to 0 : no rain 1: rain
     Mat2 = pd.DataFrame(Mat.applymap(lambda x: [1 if l > 0 else 0 for l in x]))
 
@@ -325,7 +323,7 @@ def main(aoifilepath, years):
         print('1/5- Collecting CHIRPS rasters images links from https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/')
         # launch concurent dowload of all the .tif files selected
         print('2/5- Dowloading  CHIRPS rasters files')
-        # concurrent_file_downloader(files)
+        concurrent_file_downloader(files)
         # dowload aoi file
         print('3/5- Loading aoi shape file')
         aoishapes = aoi_shapefile_reader(aoifilepath)
