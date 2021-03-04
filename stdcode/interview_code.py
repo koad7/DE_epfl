@@ -319,7 +319,7 @@ def main(aoifilepath, years):
     -------
     a dict of rainy days monthly means over the years period given.
     '''
-    # Selection of year(s) of interest
+    # All available years on CHIRPS website
     availableyears = [*range(1981, 2021, 1)]
 
     BASE_URL = 'https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/'
