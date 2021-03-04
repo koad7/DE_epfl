@@ -261,9 +261,8 @@ def export_rasters(years):
     MONTHS_DICT = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
                    6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
     data_array = []
-    Mat = pd.DataFrame()
+    Mat = pd.DataFrame()  # intermediary matrice
     ras_meta = {}  # Profile
-    # Read rain data into dataframe
     # Read rain data into dataframe
     for file in os.listdir(MASKED_FILES_DIR):
         if file[-4:] == '.tif':
@@ -280,16 +279,17 @@ def export_rasters(years):
                 # build Dataframe with date as colname and rain values
                 Mat[dates] = data_array_sparse.toarray().tolist()
 
+    # change value to 0 : no rain 1: rain
     Mat2 = pd.DataFrame(Mat.applymap(lambda x: [1 if l > 0 else 0 for l in x]))
 
-    number_of_days = {}
+    monthly_data = {}
     for i in range(1, len(MONTHS_DICT)+1):  # for 12 months
-        number_of_days[MONTHS_DICT[i]] = Mat2[Mat2.columns[Mat2.columns.str.slice(
+        monthly_data[MONTHS_DICT[i]] = Mat2[Mat2.columns[Mat2.columns.str.slice(
             0, 7).str.endswith(f'{i:02}')]].applymap(np.array).sum(axis=1)  # count date where precipitation  is more than 0.0
 
-    for m in number_of_days:
-        with rasterio.open(f'{SATCKED_FILES_CURRENT_DIR}{m}.tif', 'w', **ras_meta) as dst:
-            dst.write(np.rint(pd.DataFrame(number_of_days[m].tolist()).astype(
+    for m in monthly_data:
+        with rasterio.open(f'{SATCKED_FILES_CURRENT_DIR}{m}.tif', 'w', **ras_meta) as dst:  # convert
+            dst.write(np.rint(pd.DataFrame(monthly_data[m].tolist()).astype(
                 'float32').to_numpy()/len(years)), 1)
 
 
