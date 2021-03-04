@@ -110,9 +110,6 @@ def concurrent_files_url_list(baseUrl, years):
     files: list or urls to download
     '''
     files = {}
-    # Concurent downloading of the data
-    append_data = []
-    result = []
     # Concurences
     with ThreadPoolExecutor(max_workers=THREADS) as executor:
         for year in years:
@@ -171,10 +168,8 @@ def concurrent_file_downloader(files):
     -------
     no return
     '''
-    session = requests.session()
+    session = requests.session()  # Open sessions to persist the underlying TCP connection
     from concurrent.futures import ThreadPoolExecutor, as_completed
-    append_data = []
-    result = []
     # Concurences
     with ThreadPoolExecutor(max_workers=THREADS) as executor:
         i = 0
@@ -237,8 +232,6 @@ def concurrent_masking(shapes, years):
     Returns
     -------
     '''
-    append_data = []
-    result = []
     # Concurent masking
     with ThreadPoolExecutor(max_workers=10) as executor:
         for file in os.listdir(DOWNLOADS_DIR_TIF):
