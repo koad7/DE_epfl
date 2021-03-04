@@ -345,7 +345,7 @@ def main(aoifilepath, years):
             f'Your stacked files are available here {SATCKED_FILES_CURRENT_DIR} ')
         print('Monthly rainy days average:')
         # Delete downloaded files
+        print('... deleting the downloaded CHIRPS rasters files')
         delete_all_downloaded_files(DOWNLOADS_DIR_TIF)
     else:
         print('The year(s) you have chosen are not part of the available data')
-    print('... deleting the downloaded CHIRPS rasters files')
