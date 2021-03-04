@@ -69,6 +69,8 @@ MASKED_FILES_DIR = myenv['MASKED_FILES_DIR']
 SATCKED_FILES_DIR = myenv['SATCKED_FILES_DIR']
 SATCKED_FILES_CURRENT_DIR = myenv['SATCKED_FILES_CURRENT_DIR']
 THREADS = myenv['THREADS']
+# CHIRPS url
+CHIRPS_BASE_URL = 'https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/'
 
 
 def files_url_list(url, files, year):
@@ -322,16 +324,15 @@ def main(aoifilepath, years):
     # All available years on CHIRPS website
     availableyears = [*range(1981, 2021, 1)]
 
-    BASE_URL = 'https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/'
     # check if selected years is in the available years
     if (all(item in availableyears for item in years)):
         files = {}
         # get all files ulrs from the CHIRPS dataset base_url
-        files = concurrent_files_url_list(BASE_URL, years)
+        files = concurrent_files_url_list(CHIRPS_BASE_URL, years)
         print('1/5- Collecting CHIRPS rasters images links from https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p25/')
         # launch concurent dowload of all the .tif files selected
         print('2/5- Dowloading  CHIRPS rasters files')
-        concurrent_file_downloader(files)
+        # concurrent_file_downloader(files)
         # dowload aoi file
         print('3/5- Loading aoi shape file')
         aoishapes = aoi_shapefile_reader(aoifilepath)
@@ -339,11 +340,10 @@ def main(aoifilepath, years):
         print('4/5- Masking the main rasters  with the aoi polygon')
         concurrent_masking(aoishapes, years)
         # Generate the stacked files in SATCKED_FILES_DIR
-        print('5/5- Stacking the result rasters')
+        print('5/5- Generating the result rasters')
         export_rasters(years)
         print(
             f'Your stacked files are available here {SATCKED_FILES_CURRENT_DIR} ')
-        print('Monthly rainy days average:')
         # Delete downloaded files
         print('... deleting the downloaded CHIRPS rasters files')
         delete_all_downloaded_files(DOWNLOADS_DIR_TIF)
