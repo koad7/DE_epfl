@@ -247,15 +247,15 @@ def concurrent_masking(shapes, years):
                     "concurrent_file_downloader: Exception caught during processing")
 
 
-def stack_rasters(years):
+def export_rasters(years):
     '''
-    Calculate the number of rainy dates in month over a year
+    Create the final raster with average rainy days. 
     Parameters
     ----------
     years: List of years selected
     Returns
     -------
-    OrderedDict of month - rainy days
+    no return
     '''
 
     MONTHS_DICT = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
@@ -341,7 +341,7 @@ def main(aoifilepath, years):
 
         # Generate the stacked files in SATCKED_FILES_DIR
         print('5/5- Stacking the result rasters')
-        stack_rasters(years)
+        export_rasters(years)
         print(
             f'Your stacked files are available here {SATCKED_FILES_CURRENT_DIR} ')
         print('Monthly rainy days average:')
