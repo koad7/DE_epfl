@@ -338,7 +338,6 @@ def main(aoifilepath, years):
         # clipping/maksing.  The files are stored in MASKED_FILES_DIR
         print('4/5- Masking the main rasters  with the aoi polygon')
         concurrent_masking(aoishapes, years)
-
         # Generate the stacked files in SATCKED_FILES_DIR
         print('5/5- Stacking the result rasters')
         export_rasters(years)
